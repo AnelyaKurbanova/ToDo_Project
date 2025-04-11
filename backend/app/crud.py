@@ -6,34 +6,9 @@ from app.schemas import UserCreate
 
 
 
+
 def get_todos(db: Session):
     return db.query(models.Todo).all()
-
-def create_todo(db: Session, todo: schemas.TodoCreate):
-    db_todo = models.Todo(**todo.dict())
-    db.add(db_todo)
-    db.commit()
-    db.refresh(db_todo)
-    return db_todo
-
-def delete_todo(db: Session, todo_id: int):
-    db_todo = db.query(models.Todo).get(todo_id)
-    if db_todo:
-        db.delete(db_todo)
-        db.commit()
-    return db_todo
-
-def update_todo(db: Session, todo_id: int, todo: schemas.TodoCreate):
-    db_todo = db.query(models.Todo).get(todo_id)
-    if db_todo:
-        db_todo.title = todo.title
-        db_todo.completed = todo.completed
-        db.commit()
-        db.refresh(db_todo)
-    return db_todo
-
-
-
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -50,3 +25,43 @@ def create_user(db: Session, user: UserCreate):
 
 def get_user_by_username(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
+
+
+def get_user_todo_by_id(db: Session, todo_id: int, user: models.User):
+    return db.query(models.Todo).filter(
+        models.Todo.id == todo_id,
+        models.Todo.owner_id == user.id
+    ).first()
+
+def get_user_todos(db: Session, user: models.User):
+    return db.query(models.Todo).filter(models.Todo.owner_id == user.id).all()
+
+def create_user_todo(db: Session, todo: schemas.TodoCreate, user: models.User):
+    db_todo = models.Todo(**todo.dict(), owner_id=user.id)
+    db.add(db_todo)
+    db.commit()
+    db.refresh(db_todo)
+    return db_todo
+
+
+def update_user_todo(db: Session, todo_id: int, todo_data: schemas.TodoCreate, user: models.User):
+    db_todo = get_user_todo_by_id(db, todo_id, user)
+    if not db_todo:
+        return None
+    db_todo.title = todo_data.title
+    db_todo.completed = todo_data.completed
+    db.commit()
+    db.refresh(db_todo)
+    return db_todo
+
+
+def delete_user_todo(db: Session, todo_id: int, user: models.User):
+    db_todo = get_user_todo_by_id(db, todo_id, user)
+    if not db_todo:
+        return None
+    db.delete(db_todo)
+    db.commit()
+    return db_todo
+
+
+
