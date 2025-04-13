@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from app import schemas, crud, database
+from app import schemas, crud
 from app.dependencies import get_current_user
 from app.models import User
 from app.database import get_db
-
-
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
@@ -18,7 +16,6 @@ def create_todo(
 ):
     return crud.create_user_todo(db, todo, current_user)
 
-
 @router.get("/", response_model=List[schemas.Todo])
 def get_todos(
     db: Session = Depends(get_db),
@@ -26,11 +23,10 @@ def get_todos(
 ):
     return crud.get_user_todos(db, current_user)
 
-
 @router.put("/{todo_id}", response_model=schemas.Todo)
 def update_todo(
     todo_id: int,
-    todo: schemas.TodoCreate,
+    todo: schemas.TodoUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -38,8 +34,6 @@ def update_todo(
     if not updated:
         raise HTTPException(status_code=404, detail="Задача не найдена")
     return updated
-
-
 
 @router.delete("/{todo_id}", response_model=schemas.Todo)
 def delete_todo(

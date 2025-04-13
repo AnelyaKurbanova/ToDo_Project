@@ -4,12 +4,6 @@ from passlib.context import CryptContext
 from app.models import User
 from app.schemas import UserCreate
 
-
-
-
-def get_todos(db: Session):
-    return db.query(models.Todo).all()
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_password_hash(password):
@@ -26,7 +20,6 @@ def create_user(db: Session, user: UserCreate):
 def get_user_by_username(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
 
-
 def get_user_todo_by_id(db: Session, todo_id: int, user: models.User):
     return db.query(models.Todo).filter(
         models.Todo.id == todo_id,
@@ -37,19 +30,22 @@ def get_user_todos(db: Session, user: models.User):
     return db.query(models.Todo).filter(models.Todo.owner_id == user.id).all()
 
 def create_user_todo(db: Session, todo: schemas.TodoCreate, user: models.User):
-    db_todo = models.Todo(**todo.dict(), owner_id=user.id)
+    db_todo = models.Todo(
+        title=todo.title,
+        completed=todo.completed,
+        owner_id=user.id
+    )
     db.add(db_todo)
     db.commit()
     db.refresh(db_todo)
     return db_todo
 
-
-def update_user_todo(db: Session, todo_id: int, todo_data: schemas.TodoCreate, user: models.User):
+def update_user_todo(db: Session, todo_id: int, todo: schemas.TodoUpdate, user: models.User):
     db_todo = get_user_todo_by_id(db, todo_id, user)
     if not db_todo:
         return None
-    db_todo.title = todo_data.title
-    db_todo.completed = todo_data.completed
+    db_todo.title = todo.title
+    db_todo.completed = todo.completed
     db.commit()
     db.refresh(db_todo)
     return db_todo
@@ -62,6 +58,3 @@ def delete_user_todo(db: Session, todo_id: int, user: models.User):
     db.delete(db_todo)
     db.commit()
     return db_todo
-
-
-

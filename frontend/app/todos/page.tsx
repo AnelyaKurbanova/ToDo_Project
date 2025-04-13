@@ -7,7 +7,7 @@ import { api } from "../utils/api";
 type Todo = {
   id: number;
   title: string;
-  is_done: boolean;
+  completed: boolean;
 };
 
 export default function TodosPage() {
@@ -93,8 +93,8 @@ export default function TodosPage() {
     const matchesSearch = todo.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       filterDone === "all" ||
-      (filterDone === "done" && todo.is_done) ||
-      (filterDone === "pending" && !todo.is_done);
+      (filterDone === "done" && todo.completed) ||
+      (filterDone === "pending" && !todo.completed);
     return matchesSearch && matchesStatus;
   });
 
@@ -172,28 +172,62 @@ export default function TodosPage() {
               </div>
             </div>
           ) : (
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className={`text-lg font-medium ${todo.is_done ? "line-through text-gray-400" : ""}`}>
-                  {todo.title}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Статус: {todo.is_done ? "✔ Выполнено" : "⏳ В процессе"}
-                </p>
-              </div>
+            <div className="flex justify-between items-center gap-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={async () => {
+                    const token = localStorage.getItem("token");
+                    try {
+                      const updated = await api.put(
+                        `/todos/${todo.id}`,
+                        {
+                          title: todo.title,
+                          completed: !todo.completed,
+                        },
+                        {
+                          headers: { Authorization: `Bearer ${token}` },
+                        }
+                      );
+                      setTodos((prev) =>
+                        prev.map((t) =>
+                          t.id === todo.id ? { ...t, completed: updated.data.completed } : t
+                        )
+                      );
+                    } catch (err) {
+                      alert("Ошибка при обновлении задачи");
+                    }
+                  }}
+                  className="form-checkbox h-5 w-5 text-green-600 rounded border-gray-300 focus:ring-0 focus:outline-none transition"
+                />
+                <div>
+                  <h3
+                    className={`text-lg font-medium transition ${
+                      todo.completed ? "line-through text-gray-400" : ""
+                    }`}
+                  >
+                    {todo.title}
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    Статус: {todo.completed ? "✔ Выполнено" : "⏳ В процессе"}
+                  </p>
+                </div>
+              </label>
+
               <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setEditingId(todo.id);
                     setEditTitle(todo.title);
                   }}
-                  className="bg-gray-200 hover:bg-gray-300 text-black px-3 py-1 rounded-xl text-sm flex items-center gap-1"
+                  className="bg-gray-100 hover:bg-gray-200 text-black px-3 py-1 rounded-xl text-sm flex items-center gap-1"
                 >
                   ✏️ <span className="hidden sm:inline">Редакт.</span>
                 </button>
                 <button
                   onClick={() => handleDelete(todo.id)}
-                  className="bg-gray-200 hover:bg-gray-300 text-black px-3 py-1 rounded-xl text-sm flex items-center gap-1"
+                  className="bg-gray-100 hover:bg-gray-200 text-black px-3 py-1 rounded-xl text-sm flex items-center gap-1"
                 >
                   🗑️ <span className="hidden sm:inline">Удалить</span>
                 </button>
