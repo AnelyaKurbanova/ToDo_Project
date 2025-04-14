@@ -8,6 +8,8 @@ from app.database import get_db
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
+
+
 @router.post("/", response_model=schemas.Todo)
 def create_todo(
     todo: schemas.TodoCreate,
