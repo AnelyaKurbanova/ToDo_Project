@@ -17,6 +17,8 @@ export default function TodosPage() {
   const [editTitle, setEditTitle] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDone, setFilterDone] = useState<"all" | "done" | "pending">("all");
+  const [aiText, setAiText] = useState("");
+  const [loadingAI, setLoadingAI] = useState(false);
 
   const router = useRouter();
 
@@ -98,6 +100,41 @@ export default function TodosPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleGenerateAITasks = async () => {
+    const token = localStorage.getItem("token");
+    if (!token || !aiText.trim()) return;
+    setLoadingAI(true);
+  
+    try {
+      const res = await api.post(
+        "/todos/AI_task",
+        { ai_text: aiText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      const generatedTasks: { task: string }[] = res.data;
+  
+      // Добавляем каждую подзадачу как обычную
+      for (const item of generatedTasks) {
+        await api.post(
+          "/todos/",
+          { title: item.task },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+  
+      setAiText("");
+      fetchTodos();
+    } catch (err) {
+      alert("Ошибка при генерации задач с ИИ");
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+  
+
+
+
   return (
     <div className="max-w-xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
@@ -124,6 +161,24 @@ export default function TodosPage() {
           ➕ Добавить
         </button>
       </form>
+
+      <div className="mb-6">
+          <h3 className="text-md font-semibold mb-2">🔮 AI-помощник</h3>
+          <textarea
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+            placeholder="Опиши свой день, а ИИ разобьёт его на задачи..."
+            className="w-full border border-gray-300 rounded-xl px-4 py-2 mb-2 shadow-sm"
+          />
+          <button
+            onClick={handleGenerateAITasks}
+            disabled={loadingAI}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl w-full"
+          >
+            {loadingAI ? "Генерируем..." : "✨ Разбить на подзадачи"}
+          </button>
+        </div>
+
 
       <div className="flex gap-3 mb-6">
         <input
