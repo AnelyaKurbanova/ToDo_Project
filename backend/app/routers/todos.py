@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from app import schemas, crud
+from app import schemas, crud, ai
 from app.dependencies import get_current_user
 from app.models import User
 from app.database import get_db
@@ -54,3 +54,11 @@ def get_my_todos(
     current_user: User = Depends(get_current_user)
 ):
     return crud.get_user_todos(db, current_user)
+
+
+@router.post("/AI_task", response_model=List[schemas.TodoAI])
+def get_ai_task(
+    request: schemas.AIRequest
+):
+    return ai.get_ai_task(request.ai_text)
+

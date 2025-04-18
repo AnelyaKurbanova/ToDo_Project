@@ -39,3 +39,12 @@ class TokenData(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+class TodoAI(BaseModel):
+    task: str
+
+    class Config:
+        orm_mode = True
+
+class AIRequest(BaseModel):
+    ai_text: str
